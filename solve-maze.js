@@ -108,48 +108,60 @@ entryNodes.forEach(function (entryNode) {
     }
 });
 
-function getMostRecentVisit(nodesTraveled, node) {
-    const visitedNodes = nodesTraveled.filter((nodeTraveled) => {
-        return nodeTraveled.x == node.x && nodeTraveled.y == node.y;
-    });
-    return visitedNodes[visitedNodes.length - 1];
-}
-
 function tryPath(maze, node) {
-    if (nodesTraveled.length > 10) {
-        return false;
-    } else {
-        node.try = getPossibleDirections(maze, node);
-        nodesTraveled.push(node);
-        if (node.try.length) {
-            makeMove(maze, node, node.try[0]);
-            if (node.tried) {
-                node.tried.push(node.try[0]);
-            } else {
-                node.tried = [node.try[0]];
+    var possibleDirections = getPossibleDirections(maze, node);
+
+    node.try = possibleDirections.filter((possibleDirection) => {
+        var prevNode = nodesTraveled[nodesTraveled.length - 1];
+
+        if (prevNode) {
+            var prevNodeDirection = prevNode.to;
+
+            if (prevNodeDirection == 'left') {
+                return possibleDirection != 'right';
             }
-            node.try.shift();
+            if (prevNodeDirection == 'right') {
+                return possibleDirection != 'left';
+            }
+
+            if (prevNodeDirection == 'up') {
+                return possibleDirection != 'down';
+            }
+            if (prevNodeDirection == 'down') {
+                return possibleDirection != 'up';
+            }
+        } else {
+            return true;
         }
+    });
+
+    if (node.try.length) {
+        node.to = node.try[0];
+        nodesTraveled.push(node);
+        makeMove(maze, node, node.try[0]);
+        node.try.shift();
+    } else {
+        console.log('deadend');
     }
 }
 
 function makeMove(maze, node, direction) {
-    var newNode = { ...node };
+    var { x, y } = node;
 
     if (direction == 'down') {
-        newNode.y = newNode.y + 1;
+        y = y + 1;
     }
     if (direction == 'left') {
-        newNode.x = newNode.x - 1;
+        x = x - 1;
     }
     if (direction == 'right') {
-        newNode.x = newNode.x + 1;
+        x = x + 1;
     }
     if (direction == 'up') {
-        newNode.y = newNode.y - 1;
+        y = y - 1;
     }
 
-    tryPath(maze, newNode);
+    tryPath(maze, { x, y });
 }
 
 console.log(nodesTraveled);

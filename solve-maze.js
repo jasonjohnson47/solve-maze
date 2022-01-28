@@ -9,7 +9,7 @@ const maze = [
 let mazeCopy = maze.map((row) => [...row]);
 
 /*let nodesTraveled = [
-    {x: 3, y: 0, to: 'down'}, // do we need this first one? to keep track of current entry point being tested?
+    {x: 3, y: 0, to: 'down'}, // do we need this first one? to keep track of current entry node being tested?
     {x: 3, y: 1, to: 'left', try: ['right']},
     {x: 2, y: 1, to: 'down'},
     {x: 2, y: 2, to: 'down'},
@@ -93,75 +93,63 @@ function getPossibleDirections(maze, node) {
 
 const nodesTraveled = [];
 
-const entryPoints = mazeCopy[0].reduce((acc, curr, index) => {
+const entryNodes = mazeCopy[0].reduce((acc, curr, index) => {
     if (curr == 0) {
         acc.push({ x: index, y: 0 });
     }
     return acc;
 }, []);
 
-entryPoints.forEach(function (entryPoint) {
-    if (isZeroDown(mazeCopy, entryPoint)) {
-        tryPath(mazeCopy, entryPoint);
+entryNodes.forEach(function (entryNode) {
+    if (isZeroDown(mazeCopy, entryNode)) {
+        tryPath(mazeCopy, entryNode);
     } else {
-        console.log(`cannot move down at ${entryPoint.x}`);
+        console.log(`cannot move down at ${entryNode.x}`);
     }
 });
 
-function tryPath(maze, point) {
+function getMostRecentVisit(nodesTraveled, node) {
+    const visitedNodes = nodesTraveled.filter((nodeTraveled) => {
+        return nodeTraveled.x == node.x && nodeTraveled.y == node.y;
+    });
+    return visitedNodes[visitedNodes.length - 1];
+}
+
+function tryPath(maze, node) {
     if (nodesTraveled.length > 10) {
         return false;
     } else {
-        nodesTraveled.push(point);
-        var currentNode = nodesTraveled[nodesTraveled.length - 1];
-        var lastNode = nodesTraveled[nodesTraveled.length - 2];
-        currentNode.try = getPossibleDirections(maze, point);
-
-        if (
-            lastNode &&
-            lastNode.tried &&
-            currentNode.try.includes(lastNode.tried)
-        ) {
-            currentNode.try = currentNode.try.filter(
-                (dir) => !lastNode.tried.includes(dir)
-            );
-        }
-
-        if (currentNode.try[0]) {
-            if (currentNode.tried) {
-                currentNode.tried.push(currentNode.try[0]);
+        node.try = getPossibleDirections(maze, node);
+        nodesTraveled.push(node);
+        if (node.try.length) {
+            makeMove(maze, node, node.try[0]);
+            if (node.tried) {
+                node.tried.push(node.try[0]);
             } else {
-                currentNode.tried = [currentNode.try[0]];
+                node.tried = [node.try[0]];
             }
-
-            makeMove(maze, point, currentNode.try[0]);
-
-            currentNode.try.shift();
-        } else {
-            console.log('deadend');
+            node.try.shift();
         }
     }
 }
 
-function makeMove(maze, point, direction) {
-    var newPoint = { ...point };
+function makeMove(maze, node, direction) {
+    var newNode = { ...node };
 
     if (direction == 'down') {
-        newPoint.y = newPoint.y + 1;
+        newNode.y = newNode.y + 1;
     }
     if (direction == 'left') {
-        newPoint.x = newPoint.x - 1;
+        newNode.x = newNode.x - 1;
     }
     if (direction == 'right') {
-        newPoint.x = newPoint.x + 1;
+        newNode.x = newNode.x + 1;
     }
     if (direction == 'up') {
-        newPoint.y = newPoint.y - 1;
+        newNode.y = newNode.y - 1;
     }
 
-    console.log('newPoint', newPoint);
-
-    tryPath(maze, newPoint);
+    tryPath(maze, newNode);
 }
 
 console.log(nodesTraveled);
@@ -170,9 +158,9 @@ console.log(nodesTraveled);
 check to see if any levels have all ones (no zeros), if so, maze cannot be completed
 check to see if on last level, if so, maze completed
 
-starting at an entry point on the top level, see if you can move down,
-    if not, move on to test the next entry point
-        if no more entry points, maze cannot be completed
+starting at an entry node on the top level, see if you can move down,
+    if not, move on to test the next entry node
+        if no more entry nodes, maze cannot be completed
     if so, move down and add the new node to the list of nodes traveled
 
     add all possible directions to the 'try' property ('down', 'left', 'right', 'up'; do not include the direction you came from)

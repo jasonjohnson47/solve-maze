@@ -109,6 +109,8 @@ entryNodes.forEach(function (entryNode) {
 });
 
 function tryPath(maze, node) {
+    // TO-DO: Do not set possible directions on 'back track' nodes
+
     var possibleDirections = getPossibleDirections(maze, node);
 
     node.try = possibleDirections.filter((possibleDirection) => {
@@ -136,13 +138,29 @@ function tryPath(maze, node) {
     });
 
     if (node.try.length) {
-        node.to = node.try[0];
-        nodesTraveled.push(node);
-        makeMove(maze, node, node.try[0]);
+        var directionToMove = node.try[0];
         node.try.shift();
+        node.to = directionToMove;
+        nodesTraveled.push(node);
+        makeMove(maze, node, directionToMove);
     } else {
-        console.log('deadend');
+        // prevent stackoverflow
+        if (nodesTraveled.length < 20) {
+            var backTrackNode =
+                getLastNodeWithMoreDirectionsToTry(nodesTraveled);
+            console.log('deadend, try from: ', backTrackNode);
+            tryPath(maze, backTrackNode);
+        }
     }
+}
+
+function getLastNodeWithMoreDirectionsToTry(nodesTraveled) {
+    const nodesWithDirectionsToTry = nodesTraveled.filter(
+        (node) => node.try && node.try.length > 0
+    );
+    const lastNodeWithDirectionsToTry =
+        nodesWithDirectionsToTry[nodesWithDirectionsToTry.length - 1];
+    return lastNodeWithDirectionsToTry;
 }
 
 function makeMove(maze, node, direction) {

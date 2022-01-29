@@ -1,12 +1,36 @@
-const maze = [
+const maze1 = [
     [0, 0, 1, 0, 1],
     [1, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [1, 1, 1, 1, 1],
+];
+
+const maze2 = [
+    [0, 1, 1, 1, 1],
+    [0, 1, 0, 0, 0],
     [0, 1, 0, 1, 0],
     [0, 0, 0, 1, 0],
     [1, 1, 1, 1, 0],
 ];
 
-let mazeCopy = maze.map((row) => [...row]);
+const maze3 = [
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [1, 1, 1, 1, 0],
+];
+
+const maze4 = [
+    [0, 0, 1, 0, 1],
+    [1, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+];
+
+let mazeCopy = maze4.map((row) => [...row]);
 
 /*let nodesTraveled = [
     {x: 3, y: 0, to: 'down'}, // do we need this first one? to keep track of current entry node being tested?
@@ -38,14 +62,6 @@ nodesTraveled = [
     {x: 4, y: 4, to: 'down'},
 ];
 */
-
-const hasCloggedLevel = maze.some((level) =>
-    level.every((space) => space == 1)
-);
-
-if (hasCloggedLevel) {
-    return false;
-}
 
 function isZeroLeft(maze, node) {
     if (node.x == 0) {
@@ -91,7 +107,16 @@ function getPossibleDirections(maze, node) {
     return possibleDirections;
 }
 
+const hasCloggedLevel = mazeCopy.some((level) =>
+    level.every((space) => space == 1)
+);
+
+if (hasCloggedLevel) {
+    console.log('Cannot complete maze.');
+}
+
 const nodesTraveled = [];
+let isMazeCompleted = false;
 
 const entryNodes = mazeCopy[0].reduce((acc, curr, index) => {
     if (curr == 0) {
@@ -100,42 +125,46 @@ const entryNodes = mazeCopy[0].reduce((acc, curr, index) => {
     return acc;
 }, []);
 
-entryNodes.forEach(function (entryNode) {
+for (const entryNode of entryNodes) {
+    if (isMazeCompleted) {
+        break;
+    }
     if (isZeroDown(mazeCopy, entryNode)) {
         tryPath(mazeCopy, entryNode);
     } else {
         console.log(`cannot move down at ${entryNode.x}`);
     }
-});
+}
 
 function tryPath(maze, node) {
-    // TO-DO: Do not set possible directions on 'back track' nodes
 
-    var possibleDirections = getPossibleDirections(maze, node);
+    if (node.hasOwnProperty('try') && node.try.length) {
+        // back tracking to a node, do not reset possible directions in 'try'
+    } else {
+        var possibleDirections = getPossibleDirections(maze, node);
 
-    node.try = possibleDirections.filter((possibleDirection) => {
-        var prevNode = nodesTraveled[nodesTraveled.length - 1];
+        node.try = possibleDirections.filter((possibleDirection) => {
+            var prevNode = nodesTraveled[nodesTraveled.length - 1];
+            if (prevNode) {
+                var prevNodeDirection = prevNode.to;
 
-        if (prevNode) {
-            var prevNodeDirection = prevNode.to;
-
-            if (prevNodeDirection == 'left') {
-                return possibleDirection != 'right';
+                if (prevNodeDirection == 'left') {
+                    return possibleDirection != 'right';
+                }
+                if (prevNodeDirection == 'right') {
+                    return possibleDirection != 'left';
+                }
+                if (prevNodeDirection == 'up') {
+                    return possibleDirection != 'down';
+                }
+                if (prevNodeDirection == 'down') {
+                    return possibleDirection != 'up';
+                }
+            } else {
+                return true;
             }
-            if (prevNodeDirection == 'right') {
-                return possibleDirection != 'left';
-            }
-
-            if (prevNodeDirection == 'up') {
-                return possibleDirection != 'down';
-            }
-            if (prevNodeDirection == 'down') {
-                return possibleDirection != 'up';
-            }
-        } else {
-            return true;
-        }
-    });
+        });
+    }
 
     if (node.try.length) {
         var directionToMove = node.try[0];
@@ -144,14 +173,29 @@ function tryPath(maze, node) {
         nodesTraveled.push(node);
         makeMove(maze, node, directionToMove);
     } else {
-        // prevent stackoverflow
-        if (nodesTraveled.length < 20) {
-            var backTrackNode =
-                getLastNodeWithMoreDirectionsToTry(nodesTraveled);
-            console.log('deadend, try from: ', backTrackNode);
-            tryPath(maze, backTrackNode);
+        var backTrackNode =
+            getLastNodeWithMoreDirectionsToTry(nodesTraveled);
+
+        if (backTrackNode) {
+            console.log('backTrackNode: ', backTrackNode);
+            if (node.y != maze.length - 1) {
+                tryPath(maze, {...backTrackNode});
+            } else {
+                console.log(`Maze completed! Exited at node: x: ${node.x}, y: ${node.y}`);
+                isMazeCompleted = true;
+            }
+        } else {
+            if (node.y != maze.length - 1) {
+                console.log('Cannot complete maze :(');
+            }
         }
     }
+
+    if (node.y == maze.length - 1) {
+        console.log(`Maze completed! Exited at node: x: ${node.x}, y: ${node.y}`);
+        isMazeCompleted = true;
+    }
+
 }
 
 function getLastNodeWithMoreDirectionsToTry(nodesTraveled) {
@@ -180,6 +224,7 @@ function makeMove(maze, node, direction) {
     }
 
     tryPath(maze, { x, y });
+    
 }
 
 console.log(nodesTraveled);

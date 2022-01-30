@@ -1,67 +1,22 @@
-const maze1 = [
-    [0, 0, 1, 0, 1],
-    [1, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 1, 1, 1, 1],
-];
+import { maze1 } from './mazes.mjs';
 
-const maze2 = [
-    [0, 1, 1, 1, 1],
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 1, 1, 1, 0],
-];
+const mazeArray = maze1.map((row) => [...row]);
+const mazeContainer = document.getElementById('maze');
 
-const maze3 = [
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 1, 1, 1, 0],
-];
-
-const maze4 = [
-    [0, 0, 1, 0, 1],
-    [1, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1],
-];
-
-let mazeCopy = maze4.map((row) => [...row]);
-
-/*let nodesTraveled = [
-    {x: 3, y: 0, to: 'down'}, // do we need this first one? to keep track of current entry node being tested?
-    {x: 3, y: 1, to: 'left', try: ['right']},
-    {x: 2, y: 1, to: 'down'},
-    {x: 2, y: 2, to: 'down'},
-    {x: 2, y: 3, to: 'left'},
-    {x: 1, y: 3, to: 'left'},
-    {x: 0, y: 3, to: 'up'},
-    {x: 0, y: 2, to: null},
-];
-*/
-// trying next direction...
-/*
-mazeCopy = [
-    [1, 1, 1, 0, 1],
-    [1, 1, 1, 0, 0],
-    [1, 1, 1, 1, 0], 
-    [1, 1, 1, 1, 0], 
-    [1, 1, 1, 1, 0]
-];
-
-nodesTraveled = [
-    {x: 3, y: 0, to: 'down'},
-    {x: 3, y: 1, to: 'right', try: []},
-    {x: 4, y: 1, to: 'down'},
-    {x: 4, y: 2, to: 'down'},
-    {x: 4, y: 3, to: 'down'},
-    {x: 4, y: 4, to: 'down'},
-];
-*/
+function renderMaze(maze) {
+    maze.forEach((row, i) => {
+        row.forEach((node, j) => {
+            const nodeElem = document.createElement('div');
+            nodeElem.id = 'x' + j + 'y' + i;
+            nodeElem.classList.add('node');
+            if (node == 1) {
+                nodeElem.classList.add('node-blocked');
+            }
+            mazeContainer.appendChild(nodeElem);
+        });
+    });
+}
+renderMaze(mazeArray);
 
 function isZeroLeft(maze, node) {
     if (node.x == 0) {
@@ -107,7 +62,7 @@ function getPossibleDirections(maze, node) {
     return possibleDirections;
 }
 
-const hasCloggedLevel = mazeCopy.some((level) =>
+const hasCloggedLevel = mazeArray.some((level) =>
     level.every((space) => space == 1)
 );
 
@@ -118,7 +73,7 @@ if (hasCloggedLevel) {
 const nodesTraveled = [];
 let isMazeCompleted = false;
 
-const entryNodes = mazeCopy[0].reduce((acc, curr, index) => {
+const entryNodes = mazeArray[0].reduce((acc, curr, index) => {
     if (curr == 0) {
         acc.push({ x: index, y: 0 });
     }
@@ -129,8 +84,8 @@ for (const entryNode of entryNodes) {
     if (isMazeCompleted) {
         break;
     }
-    if (isZeroDown(mazeCopy, entryNode)) {
-        tryPath(mazeCopy, entryNode);
+    if (isZeroDown(mazeArray, entryNode)) {
+        tryPath(mazeArray, entryNode);
     } else {
         console.log(`cannot move down at ${entryNode.x}`);
     }
@@ -229,23 +184,10 @@ function makeMove(maze, node, direction) {
 
 console.log(nodesTraveled);
 
-/*
-check to see if any levels have all ones (no zeros), if so, maze cannot be completed
-check to see if on last level, if so, maze completed
-
-starting at an entry node on the top level, see if you can move down,
-    if not, move on to test the next entry node
-        if no more entry nodes, maze cannot be completed
-    if so, move down and add the new node to the list of nodes traveled
-
-    add all possible directions to the 'try' property ('down', 'left', 'right', 'up'; do not include the direction you came from)
-    try one of the directions
-        remove it from the 'try' array and move to that node
-        add the new node to the list of nodes traveled
-
-        when you reach a deadend...
-        find the last node traveled that has a 'try' array with more directions to try
-        update the mazeCopy to mark all later nodes as 1s
-        continue from that last node trying one of the directions from the 'try' property (remove that direction from the 'try' array)
-
-*/
+function renderPathTraveled(maze, nodesTraveled) {
+    nodesTraveled.forEach((nodeTraveled) => {
+        const nodeCoords = 'x' + nodeTraveled.x + 'y' + nodeTraveled.y;
+        maze.querySelector('#'+nodeCoords).classList.add('node-visited');
+    });
+}
+renderPathTraveled(mazeContainer, nodesTraveled);

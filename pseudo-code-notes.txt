@@ -1,0 +1,50 @@
+check to see if any levels have all ones (no zeros), if so, maze cannot be completed
+check to see if on last level, if so, maze completed
+
+starting at an entry node on the top level, see if you can move down,
+    if not, move on to test the next entry node
+        if no more entry nodes, maze cannot be completed
+    if so, move down and add the new node to the list of nodes traveled
+
+    add all possible directions to the 'try' property ('down', 'left', 'right', 'up'; do not include the direction you came from)
+    try one of the directions
+        remove it from the 'try' array and move to that node
+        add the new node to the list of nodes traveled
+
+        when you reach a deadend...
+        find the last node traveled that has a 'try' array with more directions to try
+        update the mazeCopy to mark all later nodes as 1s
+        continue from that last node trying one of the directions from the 'try' property (remove that direction from the 'try' array)
+
+        
+Example Run-through...
+
+let nodesTraveled = [
+    {x: 3, y: 0, to: 'down'}, // do we need this first one? to keep track of current entry node being tested?
+    {x: 3, y: 1, to: 'left', try: ['right']},
+    {x: 2, y: 1, to: 'down'},
+    {x: 2, y: 2, to: 'down'},
+    {x: 2, y: 3, to: 'left'},
+    {x: 1, y: 3, to: 'left'},
+    {x: 0, y: 3, to: 'up'},
+    {x: 0, y: 2, to: null},
+];
+
+// trying next direction...
+
+mazeCopy = [
+    [1, 1, 1, 0, 1],
+    [1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 0], 
+    [1, 1, 1, 1, 0], 
+    [1, 1, 1, 1, 0]
+];
+
+nodesTraveled = [
+    {x: 3, y: 0, to: 'down'},
+    {x: 3, y: 1, to: 'right', try: []},
+    {x: 4, y: 1, to: 'down'},
+    {x: 4, y: 2, to: 'down'},
+    {x: 4, y: 3, to: 'down'},
+    {x: 4, y: 4, to: 'down'},
+];

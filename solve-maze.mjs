@@ -1,10 +1,21 @@
-import { maze1, maze2, maze3, maze4 } from './mazes.mjs';
+import {
+    maze1,
+    maze2,
+    maze3,
+    maze4,
+    maze5,
+    maze6,
+    maze7,
+    maze8,
+    maze9,
+} from './mazes.mjs';
 
-const mazeArray = maze4.map((row) => [...row]);
+const mazeArray = maze9.map((row) => [...row]);
 const mazeContainer = document.getElementById('maze');
 const nodesTraveled = [];
 let isMazeCompleted = false;
 const nodesTraveledLookup = generateEmptyLookup(mazeArray);
+const backTrackNodes = [];
 
 function generateEmptyLookup(maze) {
     const emptyLookup = [];
@@ -26,6 +37,7 @@ function renderMaze(maze) {
                 nodeElem.classList.add('node-blocked');
             }
             mazeContainer.appendChild(nodeElem);
+            mazeContainer.style.width = maze[0].length * 20 + 4 + 'px';
         });
     });
 }
@@ -205,15 +217,12 @@ function getOppositeDirection(direction) {
     }
 }
 
-function getFrom(nodesTraveled) {
+function getFrom(nodesTraveled, node) {
     if (!nodesTraveled.length) {
         return ['up'];
     }
-    const prevNodeWent = nodesTraveled[nodesTraveled.length - 1].went;
-    const currNodeFrom = prevNodeWent.map((direction) => {
-        return getOppositeDirection(direction);
-    });
-    return currNodeFrom;
+    const prevNode = nodesTraveled[nodesTraveled.length - 1];
+    return getOppositeDirection(prevNode.went[prevNode.went.length - 1]);
 }
 
 function getHistoryOfNode(nodesTraveled, nodesTraveledLookup, node) {
@@ -229,10 +238,6 @@ function getHistoryOfNode(nodesTraveled, nodesTraveledLookup, node) {
     } else {
         return false;
     }
-}
-
-function backTrack() {
-    // TO-DO
 }
 
 function enterNodeAndAssess(maze, node) {
@@ -251,7 +256,12 @@ function enterNodeAndAssess(maze, node) {
         getHistoryOfNode(nodesTraveled, nodesTraveledLookup, currNode) ||
         currNode;
 
-    currNode.from = getFrom(nodesTraveled);
+    const fromDirection = getFrom(nodesTraveled, currNode);
+    if (!currNode.from) {
+        currNode.from = [fromDirection];
+    } else {
+        currNode.from.push(fromDirection);
+    }
 
     currNode.possibleDirections = getPossibleDirections(
         mazeArray,
@@ -260,10 +270,11 @@ function enterNodeAndAssess(maze, node) {
         currNode
     );
 
-    if (currNode.went?.length) {
-        currNode.went.push(currNode.possibleDirections[0]);
+    const wentDirection = currNode.possibleDirections[0];
+    if (!currNode.went) {
+        currNode.went = [wentDirection];
     } else {
-        currNode.went = [currNode.possibleDirections[0]];
+        currNode.went.push(wentDirection);
     }
 
     nodesTraveled.push(currNode);
@@ -278,11 +289,25 @@ function enterNodeAndAssess(maze, node) {
         ];
     }
 
+    console.log(currNode);
+
+    if (currNode.possibleDirections.length >= 2) {
+        backTrackNodes.push(nodesTraveled.length - 1);
+    }
+
     if (currNode.possibleDirections.length) {
         enterNodeAndAssess(
             maze,
             getNextNodeCoords(currNode, currNode.went[currNode.went.length - 1])
         );
+    } else {
+        if (backTrackNodes.length) {
+            const backTrackNodeIndex = backTrackNodes.pop();
+            const backTrackNode = { ...nodesTraveled[backTrackNodeIndex] };
+            enterNodeAndAssess(maze, backTrackNode);
+        } else {
+            console.log('no where to go, cannot complete maze');
+        }
     }
 }
 

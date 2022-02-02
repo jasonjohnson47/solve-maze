@@ -1,21 +1,22 @@
 html {
     box-sizing: border-box;
 }
-*, *:before, *:after {
+*,
+*:before,
+*:after {
     box-sizing: inherit;
 }
 #maze {
     display: flex;
     flex-wrap: wrap;
-    width:104px;
     margin: auto;
 }
 .node {
-    border:1px solid #444;
-    width:20px;
-    height:20px;
+    border: 1px solid #444;
+    width: 20px;
+    height: 20px;
     margin-left: -1px;
-    margin-top:-1px;
+    margin-top: -1px;
 }
 .node-blocked {
     background-color: #444;

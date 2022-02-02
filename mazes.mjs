@@ -3,7 +3,7 @@ const maze1 = [
     [1, 1, 0, 0, 0],
     [0, 1, 0, 1, 0],
     [0, 0, 0, 1, 0],
-    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 0],
 ];
 
 const maze2 = [
@@ -30,4 +30,4 @@ const maze4 = [
     [1, 1, 1, 1, 1],
 ];
 
-export {maze1};
+export { maze1, maze2, maze3, maze4 };

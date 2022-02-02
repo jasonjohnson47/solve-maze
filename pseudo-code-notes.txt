@@ -48,3 +48,38 @@ nodesTraveled = [
     {x: 4, y: 3, to: 'down'},
     {x: 4, y: 4, to: 'down'},
 ];
+
+
+Refined approach...
+
+/* nodesTraveled example...
+[
+    { x: 3, y: 0, from: ['up'], went: ['down'],  },
+    { x: 3, y: 1, from: ['up'], possibleDirections: ['left', 'right'], went: ['left'] },
+    { x: 2, y: 1, from: ['right'], went: ['down'] }
+];
+*/
+
+// enter node
+// build information about it in steps
+// push to nodesTraveled
+// check status to see if maze completed
+
+// getHistoryOfNode(currNode)... no history, start with...
+// { x: 3, y: 1 }
+// if it had history, it might start with...
+// { x: 3, y: 1, possibleDirections: ['left', 'right'], went: ['left'], from: ['up', 'right'] }
+
+// look to last node in the nodesTraveled, check its 'went' value to set 'from'
+// if nodesTraveled is empty, came from 'up' (since it is a top to bottom maze)
+// { x: 3, y: 1, from: ['up'] }
+
+/* 
+getPossibleDirections(), exclude:
+- 1's
+- direction you came from
+- nodes already visited without other directions to try
+*/
+
+// went = possibleDirections[0]
+// { x: 3, y: 1, from: ['up'], possibleDirections: ['left', 'right'], went: ['left'] }

@@ -1,7 +1,20 @@
-import { maze1 } from './mazes.mjs';
+import { maze1, maze2, maze3, maze4 } from './mazes.mjs';
 
-const mazeArray = maze1.map((row) => [...row]);
+const mazeArray = maze4.map((row) => [...row]);
 const mazeContainer = document.getElementById('maze');
+const nodesTraveled = [];
+let isMazeCompleted = false;
+const nodesTraveledLookup = generateEmptyLookup(mazeArray);
+
+function generateEmptyLookup(maze) {
+    const emptyLookup = [];
+    const numOfRows = maze.length;
+    const numOfCols = maze[0].length;
+    for (let i = 0; i < numOfRows; i++) {
+        emptyLookup.push(Array(numOfCols).fill(null));
+    }
+    return emptyLookup;
+}
 
 function renderMaze(maze) {
     maze.forEach((row, i) => {
@@ -17,6 +30,13 @@ function renderMaze(maze) {
     });
 }
 renderMaze(mazeArray);
+
+function renderPathTraveled(maze, nodesTraveled) {
+    nodesTraveled.forEach((nodeTraveled) => {
+        const nodeCoords = 'x' + nodeTraveled.x + 'y' + nodeTraveled.y;
+        maze.querySelector('#' + nodeCoords).classList.add('node-visited');
+    });
+}
 
 function isZeroLeft(maze, node) {
     if (node.x == 0) {
@@ -43,25 +63,6 @@ function isZeroUp(maze, node) {
     return maze[node.y - 1][node.x] == 0;
 }
 
-function getPossibleDirections(maze, node) {
-    const possibleDirections = [];
-
-    if (isZeroDown(maze, node)) {
-        possibleDirections.push('down');
-    }
-    if (isZeroLeft(maze, node)) {
-        possibleDirections.push('left');
-    }
-    if (isZeroRight(maze, node)) {
-        possibleDirections.push('right');
-    }
-    if (isZeroUp(maze, node)) {
-        possibleDirections.push('up');
-    }
-
-    return possibleDirections;
-}
-
 const hasCloggedLevel = mazeArray.some((level) =>
     level.every((space) => space == 1)
 );
@@ -69,9 +70,6 @@ const hasCloggedLevel = mazeArray.some((level) =>
 if (hasCloggedLevel) {
     console.log('Cannot complete maze.');
 }
-
-const nodesTraveled = [];
-let isMazeCompleted = false;
 
 const entryNodes = mazeArray[0].reduce((acc, curr, index) => {
     if (curr == 0) {
@@ -85,85 +83,96 @@ for (const entryNode of entryNodes) {
         break;
     }
     if (isZeroDown(mazeArray, entryNode)) {
-        tryPath(mazeArray, entryNode);
+        enterNodeAndAssess(mazeArray, entryNode);
     } else {
         console.log(`cannot move down at ${entryNode.x}`);
     }
 }
 
-function tryPath(maze, node) {
+function getPossibleDirections(maze, nodesTraveled, nodesTraveledLookup, node) {
+    const possibleDirections = [];
 
-    if (node.hasOwnProperty('try') && node.try.length) {
-        // back tracking to a node, do not reset possible directions in 'try'
-    } else {
-        var possibleDirections = getPossibleDirections(maze, node);
-
-        node.try = possibleDirections.filter((possibleDirection) => {
-            var prevNode = nodesTraveled[nodesTraveled.length - 1];
-            if (prevNode) {
-                var prevNodeDirection = prevNode.to;
-
-                if (prevNodeDirection == 'left') {
-                    return possibleDirection != 'right';
-                }
-                if (prevNodeDirection == 'right') {
-                    return possibleDirection != 'left';
-                }
-                if (prevNodeDirection == 'up') {
-                    return possibleDirection != 'down';
-                }
-                if (prevNodeDirection == 'down') {
-                    return possibleDirection != 'up';
-                }
-            } else {
-                return true;
-            }
-        });
+    // find adjacent 0s
+    if (isZeroDown(maze, node)) {
+        possibleDirections.push('down');
+    }
+    if (isZeroLeft(maze, node)) {
+        possibleDirections.push('left');
+    }
+    if (isZeroRight(maze, node)) {
+        possibleDirections.push('right');
+    }
+    if (isZeroUp(maze, node)) {
+        possibleDirections.push('up');
     }
 
-    if (node.try.length) {
-        var directionToMove = node.try[0];
-        node.try.shift();
-        node.to = directionToMove;
-        nodesTraveled.push(node);
-        makeMove(maze, node, directionToMove);
-    } else {
-        var backTrackNode =
-            getLastNodeWithMoreDirectionsToTry(nodesTraveled);
-
-        if (backTrackNode) {
-            console.log('backTrackNode: ', backTrackNode);
-            if (node.y != maze.length - 1) {
-                tryPath(maze, {...backTrackNode});
-            } else {
-                console.log(`Maze completed! Exited at node: x: ${node.x}, y: ${node.y}`);
-                isMazeCompleted = true;
-            }
-        } else {
-            if (node.y != maze.length - 1) {
-                console.log('Cannot complete maze :(');
-            }
+    // exclude 'from' directions
+    const possibleDirectionsFilterOutFrom = possibleDirections.filter(
+        (direction) => {
+            return !node.from.includes(direction);
         }
-    }
-
-    if (node.y == maze.length - 1) {
-        console.log(`Maze completed! Exited at node: x: ${node.x}, y: ${node.y}`);
-        isMazeCompleted = true;
-    }
-
-}
-
-function getLastNodeWithMoreDirectionsToTry(nodesTraveled) {
-    const nodesWithDirectionsToTry = nodesTraveled.filter(
-        (node) => node.try && node.try.length > 0
     );
-    const lastNodeWithDirectionsToTry =
-        nodesWithDirectionsToTry[nodesWithDirectionsToTry.length - 1];
-    return lastNodeWithDirectionsToTry;
+
+    // look ahead to nodes that are 0s
+    // see if they've been visited before
+    // and have directions they can still try
+
+    const possibleNodes = possibleDirectionsFilterOutFrom.map((direction) => {
+        return getNextNodeCoords(node, direction);
+    });
+
+    const possibleNodesIndexes = possibleNodes
+        .map((possibleNode) => {
+            return nodesTraveledLookup[possibleNode.y][possibleNode.x];
+        })
+        .filter((nodeIndexValue) => nodeIndexValue != null);
+
+    if (possibleNodesIndexes.length) {
+        const possibleNodesToExclude = possibleNodesIndexes
+            .map((i) => {
+                return nodesTraveled[i];
+            })
+            .filter((nodeTraveled) => {
+                return (
+                    nodeTraveled?.possibleDirections?.length ==
+                    nodeTraveled?.went?.length
+                );
+            });
+
+        const directionsToExclude = possibleNodesToExclude.map(
+            (nodeToExclude) => {
+                return getDirectionRelativeToNode(node, nodeToExclude);
+            }
+        );
+
+        const possibleDirectionsFiltered =
+            possibleDirectionsFilterOutFrom.filter((possibleDirection) => {
+                return !directionsToExclude.includes(possibleDirection);
+            });
+
+        return possibleDirectionsFiltered;
+    } else {
+        return possibleDirectionsFilterOutFrom;
+    }
 }
 
-function makeMove(maze, node, direction) {
-    var { x, y } = node;
+function getDirectionRelativeToNode(node, adjacentNode) {
+    if (adjacentNode.x > node.x) {
+        return 'right';
+    }
+    if (adjacentNode.x < node.x) {
+        return 'left';
+    }
+    if (adjacentNode.y > node.y) {
+        return 'down';
+    }
+    if (adjacentNode.y < node.y) {
+        return 'up';
+    }
+}
+
+function getNextNodeCoords(node, direction) {
+    let { x, y } = node;
 
     if (direction == 'down') {
         y = y + 1;
@@ -178,16 +187,105 @@ function makeMove(maze, node, direction) {
         y = y - 1;
     }
 
-    tryPath(maze, { x, y });
-    
+    return { x, y };
+}
+
+function getOppositeDirection(direction) {
+    if (direction == 'left') {
+        return 'right';
+    }
+    if (direction == 'right') {
+        return 'left';
+    }
+    if (direction == 'up') {
+        return 'down';
+    }
+    if (direction == 'down') {
+        return 'up';
+    }
+}
+
+function getFrom(nodesTraveled) {
+    if (!nodesTraveled.length) {
+        return ['up'];
+    }
+    const prevNodeWent = nodesTraveled[nodesTraveled.length - 1].went;
+    const currNodeFrom = prevNodeWent.map((direction) => {
+        return getOppositeDirection(direction);
+    });
+    return currNodeFrom;
+}
+
+function getHistoryOfNode(nodesTraveled, nodesTraveledLookup, node) {
+    // find last node in nodesTraveled that has the same x/y coordinates
+    // return a copy of that object
+    const indexesInNodesTraveled = nodesTraveledLookup[node.y][node.x];
+
+    if (indexesInNodesTraveled) {
+        const highestIndex =
+            indexesInNodesTraveled[indexesInNodesTraveled.length - 1];
+        const mostRecentNodeHistory = nodesTraveled[highestIndex];
+        return { ...mostRecentNodeHistory };
+    } else {
+        return false;
+    }
+}
+
+function backTrack() {
+    // TO-DO
+}
+
+function enterNodeAndAssess(maze, node) {
+    let currNode = { ...node };
+
+    if (currNode.y == maze.length - 1) {
+        nodesTraveled.push(currNode);
+        isMazeCompleted = true;
+        console.log(
+            `Maze completed!!! Exited at node: x: ${currNode.x}, y: ${currNode.y}`
+        );
+        return false;
+    }
+
+    currNode =
+        getHistoryOfNode(nodesTraveled, nodesTraveledLookup, currNode) ||
+        currNode;
+
+    currNode.from = getFrom(nodesTraveled);
+
+    currNode.possibleDirections = getPossibleDirections(
+        mazeArray,
+        nodesTraveled,
+        nodesTraveledLookup,
+        currNode
+    );
+
+    if (currNode.went?.length) {
+        currNode.went.push(currNode.possibleDirections[0]);
+    } else {
+        currNode.went = [currNode.possibleDirections[0]];
+    }
+
+    nodesTraveled.push(currNode);
+
+    if (nodesTraveledLookup[currNode.y][currNode.x]) {
+        nodesTraveledLookup[currNode.y][currNode.x].push(
+            nodesTraveled.length - 1
+        );
+    } else {
+        nodesTraveledLookup[currNode.y][currNode.x] = [
+            nodesTraveled.length - 1,
+        ];
+    }
+
+    if (currNode.possibleDirections.length) {
+        enterNodeAndAssess(
+            maze,
+            getNextNodeCoords(currNode, currNode.went[currNode.went.length - 1])
+        );
+    }
 }
 
 console.log(nodesTraveled);
-
-function renderPathTraveled(maze, nodesTraveled) {
-    nodesTraveled.forEach((nodeTraveled) => {
-        const nodeCoords = 'x' + nodeTraveled.x + 'y' + nodeTraveled.y;
-        maze.querySelector('#'+nodeCoords).classList.add('node-visited');
-    });
-}
+console.log(nodesTraveledLookup);
 renderPathTraveled(mazeContainer, nodesTraveled);

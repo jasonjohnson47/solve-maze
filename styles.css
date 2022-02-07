@@ -17,10 +17,23 @@ html {
     height: 20px;
     margin-left: -1px;
     margin-top: -1px;
+    background-color: #fff;
 }
 .node-blocked {
     background-color: #444;
 }
+
+@keyframes animateIn {
+    from {
+        background-color: #fff;
+    }
+    to {
+        background-color: #cc0000;
+    }
+}
+
 .node-visited {
-    background-color: #cc0000;
+    animation-name: animateIn;
+    animation-duration: 700ms;
+    animation-fill-mode: forwards;
 }

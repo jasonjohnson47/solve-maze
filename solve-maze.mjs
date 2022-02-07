@@ -44,9 +44,15 @@ function renderMaze(maze) {
 renderMaze(mazeArray);
 
 function renderPathTraveled(maze, nodesTraveled) {
-    nodesTraveled.forEach((nodeTraveled) => {
+    nodesTraveled.forEach((nodeTraveled, index) => {
         const nodeCoords = 'x' + nodeTraveled.x + 'y' + nodeTraveled.y;
-        maze.querySelector('#' + nodeCoords).classList.add('node-visited');
+        const speed = (index + 1) * 200;
+        setTimeout(function () {
+            const nodeEl = maze.querySelector('#' + nodeCoords);
+            nodeEl.classList.remove('node-visited');
+            void nodeEl.offsetWidth; // trigger reflow to restart css transition
+            nodeEl.classList.add('node-visited');
+        }, speed);
     });
 }
 

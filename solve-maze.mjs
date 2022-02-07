@@ -134,7 +134,7 @@ function getPossibleDirections(maze, nodesTraveled, nodesTraveledLookup, node) {
     });
 
     const possibleNodesIndexes = possibleNodes
-        .map((possibleNode) => {
+        .flatMap((possibleNode) => {
             return nodesTraveledLookup[possibleNode.y][possibleNode.x];
         })
         .filter((nodeIndexValue) => nodeIndexValue != null);
@@ -146,8 +146,9 @@ function getPossibleDirections(maze, nodesTraveled, nodesTraveledLookup, node) {
             })
             .filter((nodeTraveled) => {
                 return (
+                    nodeTraveled?.possibleDirections.length == 0 ||
                     nodeTraveled?.possibleDirections?.length ==
-                    nodeTraveled?.went?.length
+                        nodeTraveled?.went?.length
                 );
             });
 
@@ -222,7 +223,11 @@ function getFrom(nodesTraveled, node) {
         return ['up'];
     }
     const prevNode = nodesTraveled[nodesTraveled.length - 1];
-    return getOppositeDirection(prevNode.went[prevNode.went.length - 1]);
+
+    if (prevNode.went) {
+        const prevNodeWent = prevNode.went[prevNode.went.length - 1];
+        return getOppositeDirection(prevNodeWent);
+    }
 }
 
 function getHistoryOfNode(nodesTraveled, nodesTraveledLookup, node) {
@@ -234,14 +239,14 @@ function getHistoryOfNode(nodesTraveled, nodesTraveledLookup, node) {
         const highestIndex =
             indexesInNodesTraveled[indexesInNodesTraveled.length - 1];
         const mostRecentNodeHistory = nodesTraveled[highestIndex];
-        return { ...mostRecentNodeHistory };
+        return _.cloneDeep(mostRecentNodeHistory);
     } else {
         return false;
     }
 }
 
 function enterNodeAndAssess(maze, node) {
-    let currNode = { ...node };
+    let currNode = _.cloneDeep(node);
 
     if (currNode.y == maze.length - 1) {
         nodesTraveled.push(currNode);
@@ -271,10 +276,12 @@ function enterNodeAndAssess(maze, node) {
     );
 
     const wentDirection = currNode.possibleDirections[0];
-    if (!currNode.went) {
-        currNode.went = [wentDirection];
-    } else {
-        currNode.went.push(wentDirection);
+    if (wentDirection) {
+        if (!currNode.went) {
+            currNode.went = [wentDirection];
+        } else {
+            currNode.went.push(wentDirection);
+        }
     }
 
     nodesTraveled.push(currNode);
@@ -289,7 +296,7 @@ function enterNodeAndAssess(maze, node) {
         ];
     }
 
-    console.log(currNode);
+    //console.log(currNode);
 
     if (currNode.possibleDirections.length >= 2) {
         backTrackNodes.push(nodesTraveled.length - 1);
@@ -303,7 +310,9 @@ function enterNodeAndAssess(maze, node) {
     } else {
         if (backTrackNodes.length) {
             const backTrackNodeIndex = backTrackNodes.pop();
-            const backTrackNode = { ...nodesTraveled[backTrackNodeIndex] };
+            const backTrackNode = _.cloneDeep(
+                nodesTraveled[backTrackNodeIndex]
+            );
             enterNodeAndAssess(maze, backTrackNode);
         } else {
             console.log('no where to go, cannot complete maze');

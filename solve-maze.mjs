@@ -8,9 +8,10 @@ import {
     maze7,
     maze8,
     maze9,
+    maze10,
 } from './mazes.mjs';
 
-const mazeArray = maze9.map((row) => [...row]);
+const mazeArray = maze10.map((row) => [...row]);
 const mazeContainer = document.getElementById('maze');
 const nodesTraveled = [];
 let isMazeCompleted = false;

@@ -1,18 +1,10 @@
-import {
-    maze1,
-    maze2,
-    maze3,
-    maze4,
-    maze5,
-    maze6,
-    maze7,
-    maze8,
-    maze9,
-    maze10,
-    maze11,
-} from './mazes.mjs';
+import { mazes } from './mazes.mjs';
 
-const mazeArray = maze11.map((row) => [...row]);
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+const mazeArray = mazes[getRandomInt(mazes.length)].map((row) => [...row]);
 const mazeContainer = document.getElementById('maze');
 const nodesTraveled = [];
 let isMazeCompleted = false;
@@ -39,7 +31,7 @@ function renderMaze(maze) {
                 nodeElem.classList.add('node-blocked');
             }
             mazeContainer.appendChild(nodeElem);
-            mazeContainer.style.width = maze[0].length * 20 + 4 + 'px';
+            mazeContainer.style.width = maze[0].length * 19 + 'px';
         });
     });
 }
